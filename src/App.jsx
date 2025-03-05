@@ -12,6 +12,10 @@ function App() {
   const [totalPrice, setTotalPrice] = useState(0);
   console.log("addedProducts", addedProducts);
 
+  const formatPrice = (price) => {
+    return price.toFixed(2).toString().replace(".", ",");
+  };
+
   const updateProductQuantity = (product) => {
     const productIndex = addedProducts.findIndex(
       (p) => p.name === product.name
@@ -50,7 +54,7 @@ function App() {
       finalPrice += p.price * p.quantity;
     });
     console.log("finalPrice", finalPrice);
-    setTotalPrice(finalPrice.toFixed(2));
+    setTotalPrice(finalPrice);
   };
 
   useEffect(() => countTotalPrice(addedProducts), [addedProducts]);
@@ -64,10 +68,9 @@ function App() {
             <div key={i} className="product-card">
               <div className="product-card-content">
                 <h2 className="product-name">{p.name}</h2>
-                <span className="product-price">{`${p.price
-                  .toFixed(2)
-                  .toString()
-                  .replace(".", ",")}€`}</span>
+                <span className="product-price">{`${formatPrice(
+                  p.price
+                )}€`}</span>
               </div>
               <div className="product-card-btn">
                 <button onClick={() => addToCart(p)}>
@@ -89,9 +92,7 @@ function App() {
                   <div className="product-added">
                     <div>
                       <span>
-                        {p.name} (
-                        {p.price.toFixed(2).toString().replace(".", ",")}€) x
-                        {p.quantity}
+                        {p.name} ({formatPrice(p.price)}€) x{p.quantity}
                       </span>
                     </div>
                     <div className="remove-prod-btn">
@@ -114,7 +115,7 @@ function App() {
             <hr />
 
             <div className="total-price">
-              <span>Totale: {totalPrice.toString().replace(".", ",")}€</span>
+              <span>Totale: {formatPrice(totalPrice)}€</span>
             </div>
           </div>
         )}
