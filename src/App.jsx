@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react";
+import { useReducer } from "react";
 
 function App() {
   const products = [
@@ -7,11 +7,10 @@ function App() {
     { name: "Latte", price: 1.0 },
     { name: "Pasta", price: 0.7 },
   ];
-  const itialValProductList = [];
 
   function cartReducer(productList, action) {
     const { product, quantity, i, removeButton } = action.payload;
-    const minItems = 0;
+    const minItems = 1;
     const maxItems = 99;
     switch (action.type) {
       case "ADD_ITEM":
@@ -45,34 +44,25 @@ function App() {
           }
           return prodList;
         });
-        return (productList = [...productsListUpdated]);
+        return [...productsListUpdated];
 
       default:
         return productList;
     }
   }
 
-  const [productsInCart, dispatch] = useReducer(
-    cartReducer,
-    itialValProductList
-  );
+  const [productsInCart, dispatchCart] = useReducer(cartReducer, []);
   /* console.log("productsInCart", productsInCart); */
-
-  const [totalPrice, setTotalPrice] = useState(0);
 
   const formatPrice = (price) => {
     return price.toFixed(2).toString().replace(".", ",");
   };
 
-  const countTotalPrice = (products) => {
-    let finalPrice = 0;
-    products.forEach((p) => {
-      finalPrice += p.price * (!isNaN(p.quantity) ? p.quantity : 0);
-    });
-    /* console.log("finalPrice", finalPrice); */
-    setTotalPrice(finalPrice);
-  };
-  useEffect(() => countTotalPrice(productsInCart), [productsInCart]);
+  const totalPrice = productsInCart.reduce(
+    (acc, prod) =>
+      acc + prod.price * (!isNaN(prod.quantity) ? prod.quantity : 0),
+    0
+  );
 
   return (
     <main>
@@ -95,7 +85,7 @@ function App() {
                     )
                       ? "ADD_ITEM"
                       : "UPDATE_QUANTITY";
-                    dispatch({
+                    dispatchCart({
                       type: actionType,
                       payload: { product, quantity: null },
                     });
@@ -119,15 +109,12 @@ function App() {
                   <div className="product-added">
                     <div className="product-info">
                       <div>
-                        {product.name} ({formatPrice(product.price)}€)
-                      </div>
-
-                      <div>
+                        <span>x </span>
                         <input
                           type="number"
                           value={product.quantity}
                           onChange={(e) =>
-                            dispatch({
+                            dispatchCart({
                               type: "UPDATE_QUANTITY",
                               payload: {
                                 product,
@@ -139,12 +126,15 @@ function App() {
                           max={99}
                         />
                       </div>
+                      <div>
+                        {product.name} ({formatPrice(product.price)}€)
+                      </div>
                     </div>
                     <div className="remove-prod-btn">
                       <div>
                         <button
                           onClick={() =>
-                            dispatch({
+                            dispatchCart({
                               type: "REMOVE_ITEM",
                               payload: { i, removeButton: "singleremove" },
                             })
@@ -156,7 +146,7 @@ function App() {
                       <div>
                         <button
                           onClick={() =>
-                            dispatch({
+                            dispatchCart({
                               type: "REMOVE_ITEM",
                               payload: { i, removeButton: "fullremove" },
                             })
