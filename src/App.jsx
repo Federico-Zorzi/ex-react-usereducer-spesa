@@ -113,9 +113,9 @@ function App() {
         <h2>Carrello</h2>
         {productsInCart.length > 0 && (
           <div className="receipt">
-            <ul>
+            <ul id="products-cart-list">
               {productsInCart.map((product, i) => (
-                <li key={i}>
+                <li key={i} className="product-cart-item-list">
                   <div className="product-added">
                     <div className="product-info">
                       <div>
