@@ -28,6 +28,7 @@ h1 {
   display: flex;
   align-items: center;
 }
+
 .product-name {
   margin: 0;
 }
@@ -43,6 +44,12 @@ h1 {
   justify-content: space-between;
   align-items: center;
 }
+
+.product-info {
+  display: flex;
+  gap: 1rem;
+}
+
 /* RECEIPT */
 .receipt {
   width: 500px;

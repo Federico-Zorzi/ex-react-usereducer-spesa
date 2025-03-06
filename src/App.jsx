@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 
 function App() {
   const products = [
@@ -7,73 +7,100 @@ function App() {
     { name: "Latte", price: 1.0 },
     { name: "Pasta", price: 0.7 },
   ];
+  const itialValProductList = [];
 
-  const [addedProducts, setAddedProducts] = useState([]);
+  function cartReducer(productList, action) {
+    const { product, quantity, i, removeButton } = action.payload;
+    const minItems = 0;
+    const maxItems = 99;
+    switch (action.type) {
+      case "ADD_ITEM":
+        return [...productList, { ...product, quantity: 1 }];
+      case "REMOVE_ITEM":
+        /* console.log("i", i, "removeButton", removeButton); */
+        if (removeButton === "fullremove")
+          return productList.filter((prod, index) => index !== i);
+
+        return productList
+          .map((prod, index) =>
+            i === index ? { ...prod, quantity: prod.quantity - 1 } : prod
+          )
+          .filter((prod) => prod.quantity > 0);
+
+      case "UPDATE_QUANTITY":
+        /* console.log("producUpdated", product, "quantity", quantity); */
+        const productIndex = productList.findIndex(
+          (prodList) => prodList.name === product.name
+        );
+
+        const productsListUpdated = productList.map((prodList, i) => {
+          if (productIndex === i) {
+            let newQuantity;
+            if (quantity !== null) {
+              newQuantity = parseInt(quantity, 10);
+              if (isNaN(newQuantity)) newQuantity = prodList.quantity;
+            } else newQuantity = Math.min(maxItems, prodList.quantity + 1);
+            newQuantity = Math.max(minItems, Math.min(maxItems, newQuantity));
+            return { ...prodList, quantity: newQuantity };
+          }
+          return prodList;
+        });
+        return (productList = [...productsListUpdated]);
+
+      default:
+        return productList;
+    }
+  }
+
+  const [productsInCart, dispatch] = useReducer(
+    cartReducer,
+    itialValProductList
+  );
+  /* console.log("productsInCart", productsInCart); */
+
   const [totalPrice, setTotalPrice] = useState(0);
-  console.log("addedProducts", addedProducts);
 
   const formatPrice = (price) => {
     return price.toFixed(2).toString().replace(".", ",");
   };
 
-  const updateProductQuantity = (product) => {
-    const productIndex = addedProducts.findIndex(
-      (p) => p.name === product.name
-    );
-    /* console.log("productIndex", productIndex); */
-    const addQuantity = [...addedProducts];
-    addQuantity[productIndex].quantity += 1;
-    setAddedProducts(addQuantity);
-  };
-
-  const addToCart = (product) => {
-    /* console.log("Aggiungi al carrello:", product); */
-
-    if (!addedProducts.some((p) => p.name === product.name)) {
-      setAddedProducts((currVal) => [...currVal, { ...product, quantity: 1 }]);
-    } else {
-      updateProductQuantity(product);
-    }
-  };
-
-  const removeFromCart = (i, button = "") => {
-    /* console.log("rimuovi prodotto n: ", i, addedProducts[i]); */
-    let removeQuantity = [...addedProducts];
-    removeQuantity[i].quantity -= 1;
-    if (removeQuantity[i].quantity === 0 || button === "fullremove") {
-      removeQuantity = addedProducts.filter(
-        (p) => p.name !== removeQuantity[i].name
-      );
-    }
-    setAddedProducts(removeQuantity);
-  };
-
   const countTotalPrice = (products) => {
     let finalPrice = 0;
     products.forEach((p) => {
-      finalPrice += p.price * p.quantity;
+      finalPrice += p.price * (!isNaN(p.quantity) ? p.quantity : 0);
     });
-    console.log("finalPrice", finalPrice);
+    /* console.log("finalPrice", finalPrice); */
     setTotalPrice(finalPrice);
   };
-
-  useEffect(() => countTotalPrice(addedProducts), [addedProducts]);
+  useEffect(() => countTotalPrice(productsInCart), [productsInCart]);
 
   return (
     <main>
       <h1>Lista della spesa</h1>
       <section className="prod-list-section">
         <div className="products-list">
-          {products.map((p, i) => (
+          {products.map((product, i) => (
             <div key={i} className="product-card">
               <div className="product-card-content">
-                <h2 className="product-name">{p.name}</h2>
+                <h2 className="product-name">{product.name}</h2>
                 <span className="product-price">{`${formatPrice(
-                  p.price
+                  product.price
                 )}€`}</span>
               </div>
               <div className="product-card-btn">
-                <button onClick={() => addToCart(p)}>
+                <button
+                  onClick={() => {
+                    const actionType = !productsInCart.some(
+                      (prodInCart) => product.name === prodInCart.name
+                    )
+                      ? "ADD_ITEM"
+                      : "UPDATE_QUANTITY";
+                    dispatch({
+                      type: actionType,
+                      payload: { product, quantity: null },
+                    });
+                  }}
+                >
                   Aggiungi al carrello
                 </button>
               </div>
@@ -84,25 +111,57 @@ function App() {
 
       <section className="cart">
         <h2>Carrello</h2>
-        {addedProducts.length > 0 && (
+        {productsInCart.length > 0 && (
           <div className="receipt">
             <ul>
-              {addedProducts.map((p, i) => (
+              {productsInCart.map((product, i) => (
                 <li key={i}>
                   <div className="product-added">
-                    <div>
-                      <span>
-                        {p.name} ({formatPrice(p.price)}€) x{p.quantity}
-                      </span>
+                    <div className="product-info">
+                      <div>
+                        {product.name} ({formatPrice(product.price)}€)
+                      </div>
+
+                      <div>
+                        <input
+                          type="number"
+                          value={product.quantity}
+                          onChange={(e) =>
+                            dispatch({
+                              type: "UPDATE_QUANTITY",
+                              payload: {
+                                product,
+                                quantity: parseInt(e.target.value),
+                              },
+                            })
+                          }
+                          min={1}
+                          max={99}
+                        />
+                      </div>
                     </div>
                     <div className="remove-prod-btn">
                       <div>
-                        <button onClick={() => removeFromCart(i)}>
+                        <button
+                          onClick={() =>
+                            dispatch({
+                              type: "REMOVE_ITEM",
+                              payload: { i, removeButton: "singleremove" },
+                            })
+                          }
+                        >
                           Rimuovi singolo prodotto
                         </button>
                       </div>
                       <div>
-                        <button onClick={() => removeFromCart(i, "fullremove")}>
+                        <button
+                          onClick={() =>
+                            dispatch({
+                              type: "REMOVE_ITEM",
+                              payload: { i, removeButton: "fullremove" },
+                            })
+                          }
+                        >
                           Rimuovi prodotto dal carrello
                         </button>
                       </div>
