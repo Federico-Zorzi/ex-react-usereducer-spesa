@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useMemo, useReducer } from "react";
 
 function App() {
   const products = [
@@ -58,11 +58,13 @@ function App() {
     return price.toFixed(2).toString().replace(".", ",");
   };
 
-  const totalPrice = productsInCart.reduce(
-    (acc, prod) =>
-      acc + prod.price * (!isNaN(prod.quantity) ? prod.quantity : 0),
-    0
-  );
+  const totalPrice = useMemo(() => {
+    return productsInCart.reduce(
+      (acc, prod) =>
+        acc + prod.price * (!isNaN(prod.quantity) ? prod.quantity : 0),
+      0
+    );
+  }, [productsInCart]);
 
   return (
     <main>
